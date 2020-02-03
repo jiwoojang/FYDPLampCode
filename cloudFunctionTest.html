@@ -1,0 +1,32 @@
+<!-- Replace your-device-ID-goes-here with your actual device ID
+and replace your-access-token-goes-here with your actual access token-->
+<!DOCTYPE>
+<html>
+  <body>
+  <center>
+  <br>
+  <br>
+  <br>
+  <p>
+    <strong>
+      A simple test webpage for cloud interaction with the photon
+    </strong> 
+  </p>
+  <form action="https://api.particle.io/v1/devices/3c002a000247363339343638/SetTimezone?access_token=0b0cd06a42fa8547e0514ff4945fbd0435cfbcdf" method="POST">
+    Tell your device what to do!<br>
+    <!--
+    <br>
+    <input type="radio" name="arg" value="on">Turn the LED on.
+    <br>
+    <input type="radio" name="arg" value="off">Turn the LED off.
+    <br>
+    <br>
+    <input type="submit" value="Do it!">
+    -->
+
+    Timezone Value: <input type="text" name="timeZone" title="User Timezone">
+    <input type="submit">
+  </form>
+  </center>
+  </body>
+</html>
