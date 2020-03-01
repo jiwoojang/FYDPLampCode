@@ -1,3 +1,4 @@
+#include <math.h>
 //------------------------------------------//
 //                Pin setup
 //------------------------------------------//
@@ -94,20 +95,40 @@ int cloudSetTimezone(String timezone)
     }
 }
 
-string getBlueValue(int sunrise, int sunset)
+string modBValue() //(int sunrise, int sunset)
 {
   int h = Time.hour();
 
-  if (h < 10) {
-    return "am";
+  if (h < 10)
+  {
+    return "am";//earl
   }
-  else if (h > 20) {
+  else if (h > 20)
+  {
     return "pm";
   }
-  else {
+  else
+  {
     return "midday";
   }
+}
 
+correctBBrightness(string phase, string hour)
+{
+  int b = 0;
+  if (phase === "am")
+  {
+    b = 255;
+  }
+   else if (phase === "midday")
+   {
+    int delta = sin(hour % 2 * M_PI / 2);
+    b = 255 -
+    //446-477 nm bounds for optimization are both 255
+    //midday adjustment function
+  }
+
+  return b;
 }
 
 void setupCloudFunctions()
@@ -121,7 +142,7 @@ void setupCloudFunctions()
 void setup()
 {
     // Set everything up
-    beginDST();
+    //beginDST(); necessary?
     setupPins();
     setupCloudFunctions();
 
@@ -165,6 +186,8 @@ void loop()
 
         Serial.printlnf("Setting brigntness to %d\n", brightnessVal);
     }
+
+    correctBBrightness(modBValue(),);
 
     int dRead = digitalRead(ambientFocusSwitch);
 
