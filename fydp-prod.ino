@@ -17,6 +17,11 @@ int warmOnOff = A0;
 int blueBrightness = D1;
 int otherBrightness = D0;
 
+//subject to change, midday blue level
+//should follow a sinusoid of period 1 hr, small amplitude
+int amRGB[3] = [255, 238, 227];
+int pmRGB[3] = [255, 241, 224];
+
 //------------------------------------------//
 //               Custom Types
 //------------------------------------------//
@@ -45,7 +50,7 @@ void setupPins()
 {
     // Analog input
     pinMode(brightness, AN_INPUT);
-    
+
     // Digital input
     pinMode(ambientFocusSwitch, INPUT_PULLUP);
 
@@ -53,11 +58,11 @@ void setupPins()
     pinMode(rgbOnOff, OUTPUT);
     pinMode(coldOnOff, OUTPUT);
     pinMode(warmOnOff, OUTPUT);
-    
+
     // PWM outputs
     pinMode(blueBrightness, OUTPUT);
     pinMode(otherBrightness, OUTPUT);
-    
+
     // FOR DEBUGGING PURPOSES
     pinMode(D7, OUTPUT);
 }
@@ -65,20 +70,44 @@ void setupPins()
 int cloudSetTimezone(String timezone)
 {
     // Expand this to support more timezones
+    if (Time.isDST()) {
+      Time.setDSTOffset(Time.getDSTOffset());
+    }
+
     if (timezone == "EST")
     {
-        userTimezone = EST;
-        
+        //userTimezone = EST;
+        Time.zone(-5 + addDst);
+        serial.print(Time.now());
+        serial.print(Time.zone(-5 + addDst));
+
+
         // FOR DEBUGGING PURPOSES
         digitalWrite(D7, HIGH);
         return 1;
     }
-    else 
+    else
     {
         // FOR DEBUGGING PURPOSES
         digitalWrite(D7, LOW);
         return 0;
     }
+}
+
+string getBlueValue(int sunrise, int sunset)
+{
+  int h = Time.hour();
+
+  if (h < 10) {
+    return "am";
+  }
+  else if (h > 20) {
+    return "pm";
+  }
+  else {
+    return "midday";
+  }
+
 }
 
 void setupCloudFunctions()
@@ -92,13 +121,14 @@ void setupCloudFunctions()
 void setup()
 {
     // Set everything up
+    beginDST();
     setupPins();
     setupCloudFunctions();
-    
+
     digitalWrite(rgbOnOff, HIGH);
     digitalWrite(coldOnOff, HIGH);
     digitalWrite(warmOnOff, HIGH);
-    
+
     // Initialize all global values to their starting values
 }
 
@@ -119,7 +149,7 @@ int state = 0;
 //------------------------------------------//
 //              Main loop
 //------------------------------------------//
-void loop() 
+void loop()
 {
     int aRead = analogRead(brightness);
     //Serial.printlnf("aRead: %d prevARead %d\n delta: %d", aRead, prevARead, abs(aRead - prevARead));
@@ -129,38 +159,38 @@ void loop()
         prevARead = aRead;
         float norm = aRead / 4095.0;
         brightnessVal = (int)(255 * norm);
-        
+
         analogWrite(otherBrightness, brightnessVal, 200);
         analogWrite(blueBrightness, brightnessVal, 200);
-        
+
         Serial.printlnf("Setting brigntness to %d\n", brightnessVal);
     }
-    
+
     int dRead = digitalRead(ambientFocusSwitch);
-    
+
     if (dRead != lastDRead)
     {
         lastDebounceTime = millis();
     }
-    
-    if ((millis() - lastDebounceTime) > debounceDelay) 
+
+    if ((millis() - lastDebounceTime) > debounceDelay)
     {
-        if (dRead != prevDRead) 
+        if (dRead != prevDRead)
         {
             prevDRead = dRead;
-            
+
             if (prevDRead == 0)
             {
                 state++;
-                
+
                 state = state % 3;
                 Serial.printlnf("Switching state to %d\n", brightnessVal);
             }
         }
     }
-    
+
     lastDRead = dRead;
-    
+
     if (state == 0)
     {
         digitalWrite(coldOnOff, HIGH);
@@ -182,4 +212,17 @@ void loop()
 
         digitalWrite(warmOnOff, LOW);
     }
+
+    /*if(Time.hour() > )
+    {
+
+    }
+    else if (Time.hour() )
+    {
+
+    }
+    else
+    {
+
+    }*/
 }
