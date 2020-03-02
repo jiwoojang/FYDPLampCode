@@ -20,8 +20,6 @@ int otherBrightness = D0;
 
 //subject to change, midday blue level
 //should follow a sinusoid of period 1 hr, small amplitude
-int amRGB[3] = [255, 238, 227];
-int pmRGB[3] = [255, 241, 224];
 
 //------------------------------------------//
 //               Custom Types
@@ -95,8 +93,8 @@ int cloudSetTimezone(String timezone)
     }
 }
 
-string modBValue() //(int sunrise, int sunset)
-{
+string modBValue() {//(int sunrise, int sunset)
+
   int h = Time.hour();
 
   if (h < 10)
@@ -113,19 +111,20 @@ string modBValue() //(int sunrise, int sunset)
   }
 }
 
-correctBBrightness(string phase, string hour)
-{
+correctBBrightness(string phase, string hour) {
   int b = 0;
-  if (phase === "am")
-  {
+  //446-477 nm bounds for optimization are both 255
+
+  if (phase === "am") {
     b = 255;
   }
-   else if (phase === "midday")
-   {
-    int delta = sin(hour % 2 * M_PI / 2);
-    b = 255 -
-    //446-477 nm bounds for optimization are both 255
+  else if (phase === "midday") {
+    int delta = sin((hour % 2) * M_PI / 2) * 5;
+    b = 255 - delta;
     //midday adjustment function
+  }
+  else if (phase === "pm") {
+    b = 87; //  2700: (255, 169, 87)
   }
 
   return b;
@@ -187,7 +186,7 @@ void loop()
         Serial.printlnf("Setting brigntness to %d\n", brightnessVal);
     }
 
-    correctBBrightness(modBValue(),);
+    correctBBrightness(modBValue(), Time.hour());
 
     int dRead = digitalRead(ambientFocusSwitch);
 
