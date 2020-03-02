@@ -220,21 +220,26 @@ void loop()
 
         digitalWrite(rgbOnOff, LOW);
     }
-    else if(state == 1)
+    else if(state == 1 && phase == "am" or "midday" )
     {
         digitalWrite(warmOnOff, HIGH);
         digitalWrite(rgbOnOff, HIGH);
 
         digitalWrite(coldOnOff, LOW);
     }
-    else if(state == 2)
+    else if(state == 1 && phase == "pm")
     {
         digitalWrite(coldOnOff, HIGH);
         digitalWrite(rgbOnOff, HIGH);
 
         digitalWrite(warmOnOff, LOW);
     }
-
+    else if(state == 2 )
+    {
+        digitalWrite(coldOnOff, HIGH);
+        digitalWrite(rgbOnOff, HIGH);
+        digitalWrite(warmOnOff, HIGH);
+    }
     /*if(Time.hour() > )
     {
 
