@@ -67,6 +67,12 @@ void setupPins()
     pinMode(D7, OUTPUT);
 }
 
+void setupWifiCredentials()
+{
+    WiFi.setCredentials("Charlie's iPhone", "12345678");
+    WiFi.setCredentials("Jiwoo's iPhone", "yeet42069");
+}
+
 int cloudSetTimezone(String timezone)
 {
     // Expand this to support more timezones
@@ -148,6 +154,7 @@ void setup()
     //beginDST(); necessary?
     setupPins();
     setupCloudFunctions();
+    setupWifiCredentials();
 
     digitalWrite(rgbOnOff, HIGH);
     digitalWrite(coldOnOff, HIGH);
