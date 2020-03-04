@@ -1,4 +1,5 @@
 #include <math.h>
+
 //------------------------------------------//
 //                Pin setup
 //------------------------------------------//
@@ -10,13 +11,13 @@ int ambientFocusSwitch = A4;
 int brightness = A3;
 
 // Pull these pin high for on, low for off
-int rgbOnOff = A2;
-int coldOnOff = A1;
-int warmOnOff = A0;
+int warmOnOff = A2;
+int rgbOnOff = A1;
+int coldOnOff = A0;
 
 // These control values as PWM
-int blueBrightness = D1;
-int otherBrightness = D0;
+int blueBrightness = D0;
+int otherBrightness = D1;
 
 //subject to change, midday blue level
 //should follow a sinusoid of period 1 hr, small amplitude
@@ -76,9 +77,9 @@ int cloudSetTimezone(String timezone)
     if (timezone == "EST")
     {
         //userTimezone = EST;
-        Time.zone(-5 + addDst);
-        serial.print(Time.now());
-        serial.print(Time.zone(-5 + addDst));
+        Time.zone(-5 + Time.getDSTOffset());
+        Serial.print(Time.now());
+        //Serial.print(Time.zone(-5 + addDst));
 
 
         // FOR DEBUGGING PURPOSES
@@ -93,7 +94,7 @@ int cloudSetTimezone(String timezone)
     }
 }
 
-string modBValue() {//(int sunrise, int sunset)
+String modBValue() {//(int sunrise, int sunset)
 
   int h = Time.hour();
 
@@ -111,19 +112,22 @@ string modBValue() {//(int sunrise, int sunset)
   }
 }
 
-correctBBrightness(string phase, string hour) {
+int correctBBrightness(String phase, int hour) {
   int b = 0;
   //446-477 nm bounds for optimization are both 255
 
-  if (phase === "am") {
+  if (phase == "am") {
     b = 255;
   }
-  else if (phase === "midday") {
-    int delta = sin((hour % 2) * M_PI / 2) * 5;
-    b = 255 - delta;
+  else if (phase == "midday") {
+    hour = 20;
+    double delta = -1 *84 * cos((hour-10) * M_PI / 10) + 84;
+    int deltaInt = (int)floor(delta);
+
+    b = 255 - deltaInt;
     //midday adjustment function
   }
-  else if (phase === "pm") {
+  else if (phase == "pm") {
     b = 87; //  2700: (255, 169, 87)
   }
 
@@ -150,9 +154,13 @@ void setup()
     digitalWrite(warmOnOff, HIGH);
 
     // Initialize all global values to their starting values
-}
+    if (Time.isDST()) {
+      Time.setDSTOffset(Time.getDSTOffset());
+    }
 
-int blueVal = 0;
+    //userTimezone = EST;
+    Time.zone(-5);
+}
 
 int prevARead = 0;
 
@@ -162,7 +170,7 @@ int lastDRead = LOW;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
 
-int brightnessVal = 0;
+int blueVal = 0;
 
 int state = 0;
 
@@ -171,22 +179,32 @@ int state = 0;
 //------------------------------------------//
 void loop()
 {
+    time_t time = Time.now();
+    Serial.printlnf(Time.timeStr());
+    Serial.printlnf("Curent hour: %d\n", Time.hour());
+    
+    int newBlueVal = correctBBrightness(modBValue(), Time.hour());
+    
+    if (blueVal != newBlueVal)
+    {
+        Serial.printlnf("Adjusted blue value: %d\n", blueVal);
+        blueVal = newBlueVal;
+    }
+
     int aRead = analogRead(brightness);
-    //Serial.printlnf("aRead: %d prevARead %d\n delta: %d", aRead, prevARead, abs(aRead - prevARead));
 
     if (abs(aRead - prevARead) > 60)
     {
         prevARead = aRead;
         float norm = aRead / 4095.0;
-        brightnessVal = (int)(255 * norm);
+        int brightnessVal = (int)floor(255 * norm);
+        int blueBrightnessVal = (int)floor(blueVal * norm);
 
         analogWrite(otherBrightness, brightnessVal, 200);
-        analogWrite(blueBrightness, brightnessVal, 200);
+        analogWrite(blueBrightness, blueBrightnessVal, 200);
 
         Serial.printlnf("Setting brigntness to %d\n", brightnessVal);
     }
-
-    correctBBrightness(modBValue(), Time.hour());
 
     int dRead = digitalRead(ambientFocusSwitch);
 
@@ -206,12 +224,16 @@ void loop()
                 state++;
 
                 state = state % 3;
-                Serial.printlnf("Switching state to %d\n", brightnessVal);
+                Serial.printlnf("Switching state to %d\n", state);
             }
         }
     }
 
     lastDRead = dRead;
+    
+    String phase = modBValue();
+    Serial.printlnf("State: %d\n", state);
+    Serial.printlnf(phase);
 
     if (state == 0)
     {
@@ -220,7 +242,7 @@ void loop()
 
         digitalWrite(rgbOnOff, LOW);
     }
-    else if(state == 1 && phase == "am" or "midday" )
+    else if(state == 1 && (phase == "am" || phase == "midday"))
     {
         digitalWrite(warmOnOff, HIGH);
         digitalWrite(rgbOnOff, HIGH);
@@ -240,16 +262,4 @@ void loop()
         digitalWrite(rgbOnOff, HIGH);
         digitalWrite(warmOnOff, HIGH);
     }
-    /*if(Time.hour() > )
-    {
-
-    }
-    else if (Time.hour() )
-    {
-
-    }
-    else
-    {
-
-    }*/
 }
